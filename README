@@ -1,0 +1,10 @@
+CouchBase Photo Share
+
+requires: https://github.com/couchbaselabs/Android-Couchbase
+
+make sure to use JDK 1.6
+
+make sure to create references to the following classes in the LibCouch project:
+-commons-compress-1.0.jar
+-commons-io-2.0.1.jar
+
