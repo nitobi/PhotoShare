@@ -3,19 +3,17 @@
   <head>
     <title>PhoneGap</title>
   </head>
-  <body>
+  <body style="text-align:center;">
     <h1>Welcome to PhotoShare</h1>
 
     <script type="text/javascript" charset="utf-8" src="phonegap-1.0.0rc1.js"></script>
-    <script type="text/javascript" charset="utf-8" src="capture.js"></script>
-    <script type="text/javascript" charset="utf-8">
-          document.addEventListener("deviceready", function() {
-              alert('initialized');
-      }, true);
-    </script>
+    <script type="text/javascript" charset="utf-8" src="couchdbplugin.js"></script>
     <button type="button" onclick="capturePhoto();" style="padding:2em;font-size:15px;">Take a picture!</button>
+    <button type="button" onclick="listPictures();" style="padding:2em;font-size:15px;">List Pictures</button>
     <hr />
-    <h4>Pictures</h4>
-    <img id='myImage' style="width:640px;" />
+    <img id='myImage' style="width:160px;" /><br />
+    <h3>Pictures in CouchDB</h3>
+    <div id="pictures"></div>
+    <script type="text/javascript" charset="utf-8" src="capture.js"></script>
   </body>
 </html>
