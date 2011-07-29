@@ -19,19 +19,20 @@ public class CouchDbPlugin extends Plugin {
 	private ServiceConnection couchServiceConnection;
 	private String url = null;
 	private String dbName = null;
+	private String callbackId = null;
 
 	@Override
 	public PluginResult execute(String action, JSONArray data, String callbackId) {
-		Log.d(TAG, "CouchDbPlugin called");
+		Log.d(TAG, "CouchDbPlugin called with "+action);
 		PluginResult result = null;
+		this.callbackId = callbackId;
 		if(action.equals("start")) {
 			startCouch();
-			result = new PluginResult(Status.OK, "CouchDB is starting...");
+			result = new PluginResult(Status.NO_RESULT);
+			result.setKeepCallback(true);
 		}
 		else if(action.equals("save")) {
-			Log.d(TAG, "save action called");
 			try {
-				Log.d(TAG, data.toString());
 				result = save(data.get(0).toString());
 			}
 			catch(JSONException e) {
@@ -39,12 +40,10 @@ public class CouchDbPlugin extends Plugin {
 			}
 		}
 		else if(action.equals("list")) {
-			Log.d(TAG, "list action called");
 			result = list();
 		}
 		else if(action.equals("fetch")) {
 			try {
-				Log.d(TAG, "fetch action called");
 				result = fetch(data.get(0).toString());
 			} catch (JSONException e) {
 				Log.e(TAG, "Error whith image " + e.getMessage());
@@ -58,8 +57,7 @@ public class CouchDbPlugin extends Plugin {
 	}
 	
 	/*
-	* Will check for the existence of a design doc and if it doesnt exist,
-	* upload the json found at dataPath to create it
+	* Will check for the existence of the photoshare database and create it if it doesn't exist,
 	*/
 	private void ensureDoc(String dbName, String url) {
 
@@ -79,17 +77,22 @@ public class CouchDbPlugin extends Plugin {
 			e.printStackTrace();
 		}
 	}
-	
+	/*
+	 * CouchClient implementation
+	 */
 	private final ICouchClient mCallback = new ICouchClient.Stub() {
 		@Override
 		public void couchStarted(String host, int port) {
 			String url = "http://" + host + ":" + Integer.toString(port) + "/";
-			ensureDoc("couchdb", url);
+			ensureDoc("photoshare", url);
+			success(new PluginResult(Status.OK, "CouchDB started!"), callbackId);
+			//Log.d(TAG, (new PluginResult(Status.OK, "Couch Started!")).toSuccessCallbackString(callbackId));
 			Log.d(TAG, "Couch Started!");
 		}
 
 		@Override
 		public void installing(int completed, int total) {
+			sendJavascript(String.format("CouchDbPlugin.installStatus(%d,%d);", completed, total));
 			Log.d(TAG, "CouchDb Installing "+completed+"/"+total);
 		}
 
@@ -99,29 +102,43 @@ public class CouchDbPlugin extends Plugin {
 			couchError();
 		}
 	};
-	
+	/*
+	 * Saves an image into the CouchDB database
+	 * @param imageData the JSON image data stringified
+	 * @return A PluginResult
+	 */
 	private PluginResult save(String imageData) {
 		PluginResult result = null;
 		try {
-			Log.d(TAG, "saving "+this.url + this.dbName);
+			Log.d(TAG, "Saving image to "+this.url + this.dbName);
 			AndCouch req = AndCouch.post(this.url + this.dbName, imageData);
-			result = new PluginResult(Status.OK, "IMAGE SAVED "+req.status);
+			if(req.status != 201) {
+				result = new PluginResult(Status.OK, "Error while saving image, status code: "+req.status);
+			}
+			else {
+				result = new PluginResult(Status.OK, "Image saved "+req.status);
+			}
 		} catch (JSONException e) {
 			e.printStackTrace();
+			result = new PluginResult(Status.JSON_EXCEPTION, "Error while saving the image: "+e.getMessage());
 		}
 		return result;
 	}
-	
+	/*
+	 * Lists images currently in the CouchDB database
+	 * @return a PluginResult with the JSON data return from the CouchDB
+	 */
 	private PluginResult list() {		
 		PluginResult result = null;
 		try {
 			String allDocs = this.url+this.dbName+"/_all_docs";
-			Log.d(TAG, "List "+allDocs);
+			Log.d(TAG, "Listing "+allDocs);
 			AndCouch req = AndCouch.get(allDocs);
 			result = new PluginResult(Status.OK, req.json.toString());
-			Log.d(TAG, req.json.toString());
+			//Log.d(TAG, req.json.toString());
 		} catch (JSONException e) {
 			e.printStackTrace();
+			result = new PluginResult(Status.JSON_EXCEPTION, "Error while listing data: "+e.getMessage());
 		}
 		return result;
 	}
@@ -130,12 +147,13 @@ public class CouchDbPlugin extends Plugin {
 		PluginResult result = null;
 		try {
 			String doc = this.url+this.dbName+"/"+id;
-			Log.d(TAG, "List "+doc);
+			Log.d(TAG, "Fetching "+doc);
 			AndCouch req = AndCouch.get(doc);
 			result = new PluginResult(Status.OK, req.json.toString());
-			Log.d(TAG, req.json.toString());
+			//Log.d(TAG, req.json.toString());
 		} catch (JSONException e) {
 			e.printStackTrace();
+			result = new PluginResult(Status.JSON_EXCEPTION, "Error while fetching image: "+e.getMessage());
 		}
 		return result;
 	}

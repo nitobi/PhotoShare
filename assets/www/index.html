@@ -2,16 +2,35 @@
 <html>
   <head>
     <title>PhoneGap</title>
+    <style type="text/css">
+    button {
+      height: 42px;
+      padding: 0 8px;
+      color: #151b24;
+      line-height: 42px;
+      text-shadow: #fff 0px 1px 1px;
+      -webkit-border-radius: 16px;
+      border: 1px solid #31363d;
+      background: -webkit-gradient(linear, left top, left bottom, from(#cbcfd4), to(#939ba6));
+      -webkit-background-clip: padding-box;
+    }
+    </style>
   </head>
   <body style="text-align:center;">
     <h1>Welcome to PhotoShare</h1>
 
-    <script type="text/javascript" charset="utf-8" src="phonegap-1.0.0rc1.js"></script>
+    <script type="text/javascript" charset="utf-8" src="phonegap-1.0.0rc3.js"></script>
     <script type="text/javascript" charset="utf-8" src="couchdbplugin.js"></script>
-    <button type="button" onclick="capturePhoto();" style="padding:2em;font-size:15px;">Take a picture!</button>
-    <button type="button" onclick="listPictures();" style="padding:2em;font-size:15px;">List Pictures</button>
+    <button type="button" id="capturePhoto"
+            onclick="capturePhoto();" disabled="disabled">
+      Take a picture!
+    </button>
+    <button type="button" id="listPhotos"
+            onclick="listPictures();" disabled="disabled">
+      List Pictures
+    </button>
     <hr />
-    <img id='myImage' style="width:160px;" /><br />
+    <div id="message"></div>
     <h3>Pictures in CouchDB</h3>
     <div id="pictures"></div>
     <script type="text/javascript" charset="utf-8" src="capture.js"></script>

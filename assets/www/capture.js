@@ -1,24 +1,49 @@
+var pictures = document.getElementById("pictures");
+
+function addImage(imageData) {
+    var newImg = document.createElement("img");
+    newImg.style.width = "120px";
+    newImg.style.float = "left";
+    newImg.style.padding = "1em";
+    newImg.src = "data:image/jpeg;base64,"+imageData;
+    pictures.appendChild(newImg);
+}
+
+function setMessage(message) {
+  document.getElementById('message').innerHTML = message;
+}
+
+function onStartSuccess(message) {
+  alert("Success: "+message);
+  CouchDbPlugin.started = true;
+  // enabling buttons
+  document.getElementById('capturePhoto').disabled = '';
+  document.getElementById('listPhotos').disabled = '';
+  setMessage('');
+}
+
+function onStartFailure(error) {
+  alert("Error: "+error);
+}
+
 document.addEventListener("deviceready", function() {
-    console.log('initialized');
-    var success = function(message) {
-      CouchDbPlugin.started = true;
-      alert("Success: "+message);
-    }
-    var error = function(error) {
-      alert("Error: "+error);
-    }
-    CouchDbPlugin.start(success, error);
+  console.log('initialized');
+  PhoneGap.UsePolling = true;
+  if(CouchDbPlugin.started == false) {
+    CouchDbPlugin.start(onStartSuccess, onStartFailure);
+  }
 }, true);
 
 function onCaptureSuccess(imageData) {
-  var image = document.getElementById('myImage');
-  image.src = "data:image/jpeg;base64,"+imageData;
   var success = function(response) {
     alert(response);
+    setMessage('');
+    addImage(imageData);
   };
   var failure = function(error) {
     alert(error);
   };
+  setMessage('Saving image...');
   CouchDbPlugin.save({imageData: imageData}, success, failure);
 }
 
@@ -30,23 +55,17 @@ function capturePhoto() {
   navigator.camera.getPicture(onCaptureSuccess, onCaptureFailure, { quality: 50 });
 }
 
-var pictures = document.getElementById("pictures");
-
 function onListSuccess(data) {
   var dbObj = JSON.parse(data);
   var onFetchSuccess = function(image) {
+    setMessage('');
     // updating DOM
     console.log(image);
-    var imageObj = JSON.parse(image);
     // adding image to existing listing
-    var newImg = document.createElement("img");
-    newImg.style.width = "120px";
-    newImg.style.float = "left";
-    newImg.style.padding = "1em";
-    newImg.src = "data:image/jpeg;base64,"+imageObj.imageData;
-    pictures.appendChild(newImg);
+    addImage(JSON.parse(image).imageData);
   }
   var onFetchFailure = function(error) {
+    setMessage(error);
     console.log('Failure while fetching image');
   }
 
@@ -55,6 +74,7 @@ function onListSuccess(data) {
   }
   else {
     for(var i = 0, j = dbObj.total_rows ; i < j ; i++) {
+      setMessage('Fetching images from the DB...');
       CouchDbPlugin.fetch(dbObj.rows[i].id, onFetchSuccess, onFetchFailure);
     }
   }

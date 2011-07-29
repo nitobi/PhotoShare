@@ -924,22 +924,6 @@ PhoneGap.includeJavascript = function(jsfile, successCallback) {
     id.appendChild(el);
 };
 
-/**
- * This class is provided to bridge the gap between the way plugins were setup in 0.9.3 and 0.9.4.  
- * Users should be calling navigator.add.addService() instead of PluginManager.addService().
- * @class
- * @deprecated
- */
-var PluginManager = {
-    addService: function(serviceType, className) {
-        try {
-            navigator.app.addService(serviceType, className);
-        } catch (e) {
-            console.log("Error adding service "+serviceType+": "+e);
-        }
-    }
-};
-
 }
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
@@ -1067,8 +1051,6 @@ PhoneGap.addConstructor(function() {
     }
 });
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -1079,6 +1061,7 @@ PhoneGap.addConstructor(function() {
 
 if (!PhoneGap.hasResource("app")) {
 PhoneGap.addResource("app");
+(function() {
 
 /**
  * Constructor
@@ -1130,16 +1113,6 @@ App.prototype.clearHistory = function() {
 };
 
 /**
- * Add a class that implements a service.
- *
- * @param serviceType
- * @param className
- */
-App.prototype.addService = function(serviceType, className) {
-	PhoneGap.exec(null, null, "App", "addService", [serviceType, className]);
-};
-
-/**
  * Override the default behavior of the Android back button.
  * If overridden, when the back button is pressed, the "backKeyDown" JavaScript event will be fired.
  *
@@ -1160,11 +1133,10 @@ App.prototype.exitApp = function() {
 };
 
 PhoneGap.addConstructor(function() {
-    navigator.app = window.app = new App();
+    navigator.app = new App();
 });
+}());
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -1200,6 +1172,21 @@ Camera.DestinationType = {
     FILE_URI: 1                 // Return file uri (content://media/external/images/media/2 for Android)
 };
 Camera.prototype.DestinationType = Camera.DestinationType;
+
+/**
+ * Encoding of image returned from getPicture.
+ *
+ * Example: navigator.camera.getPicture(success, fail,
+ *              { quality: 80,
+ *                destinationType: Camera.DestinationType.DATA_URL,
+ *                sourceType: Camera.PictureSourceType.CAMERA,
+ *                encodingType: Camera.EncodingType.PNG})
+*/
+Camera.EncodingType = {
+    JPEG: 0,                    // Return JPEG encoded image
+    PNG: 1                      // Return PNG encoded image
+};
+Camera.prototype.EncodingType = Camera.EncodingType;
 
 /**
  * Source to getPicture from.
@@ -1245,6 +1232,12 @@ Camera.prototype.getPicture = function(successCallback, errorCallback, options) 
     if (options.quality) {
         quality = this.options.quality;
     }
+    
+    var maxResolution = 0;
+    if (options.maxResolution) {
+    	maxResolution = this.options.maxResolution;
+    }
+    
     var destinationType = Camera.DestinationType.DATA_URL;
     if (this.options.destinationType) {
         destinationType = this.options.destinationType;
@@ -1253,7 +1246,32 @@ Camera.prototype.getPicture = function(successCallback, errorCallback, options) 
     if (typeof this.options.sourceType === "number") {
         sourceType = this.options.sourceType;
     }
-    PhoneGap.exec(successCallback, errorCallback, "Camera", "takePicture", [quality, destinationType, sourceType]);
+    var encodingType = Camera.EncodingType.JPEG;
+    if (typeof options.encodingType == "number") {
+        encodingType = this.options.encodingType;
+    }
+    
+    var targetWidth = -1;
+    if (typeof options.targetWidth == "number") {
+        targetWidth = options.targetWidth;
+    } else if (typeof options.targetWidth == "string") {
+        var width = new Number(options.targetWidth);
+        if (isNaN(width) === false) {
+            targetWidth = width.valueOf();
+        }
+    }
+
+    var targetHeight = -1;
+    if (typeof options.targetHeight == "number") {
+        targetHeight = options.targetHeight;
+    } else if (typeof options.targetHeight == "string") {
+        var height = new Number(options.targetHeight);
+        if (isNaN(height) === false) {
+            targetHeight = height.valueOf();
+        }
+    }
+    
+    PhoneGap.exec(successCallback, errorCallback, "Camera", "takePicture", [quality, destinationType, sourceType, targetWidth, targetHeight, encodingType]);
 };
 
 PhoneGap.addConstructor(function() {
@@ -1262,8 +1280,6 @@ PhoneGap.addConstructor(function() {
     }
 });
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -1454,9 +1470,7 @@ PhoneGap.addConstructor(function(){
 		navigator.device.capture = window.device.capture = new Capture();
 	}
 });
-}
-
-/*
+}/*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
  *
@@ -1575,8 +1589,6 @@ PhoneGap.addConstructor(function() {
     }
 });
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -1887,8 +1899,6 @@ PhoneGap.addConstructor(function() {
     }
 });
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -1932,8 +1942,6 @@ PhoneGap.addConstructor(function() {
     }
 });
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -2039,8 +2047,6 @@ PhoneGap.addConstructor(function() {
     }
 });
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -3100,8 +3106,6 @@ PhoneGap.addConstructor(function() {
     if(typeof window.resolveLocalFileSystemURI == "undefined") window.resolveLocalFileSystemURI = pgLocalFileSystem.resolveLocalFileSystemURI;
 });
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -3187,8 +3191,6 @@ var FileUploadOptions = function(fileKey, fileName, mimeType, params) {
     this.params = params || null;
 };
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -3387,17 +3389,6 @@ PhoneGap.addConstructor(function() {
     }
 });
 }
-
-
-/*
- * PhoneGap is available under *either* the terms of the modified BSD license *or* the
- * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
- *
- * Copyright (c) 2005-2010, Nitobi Software Inc.
- * Copyright (c) 2010, IBM Corporation
- */
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -3463,6 +3454,7 @@ var Media = function(src, successCallback, errorCallback, statusCallback, positi
 // Media messages
 Media.MEDIA_STATE = 1;
 Media.MEDIA_DURATION = 2;
+Media.MEDIA_POSITION = 3;
 Media.MEDIA_ERROR = 9;
 
 // Media states
@@ -3587,7 +3579,6 @@ PhoneGap.Media.getMediaObject = function(id) {
  */
 PhoneGap.Media.onStatus = function(id, msg, value) {
     var media = PhoneGap.mediaObjects[id];
-
     // If state update
     if (msg === Media.MEDIA_STATE) {
         if (value === Media.MEDIA_STOPPED) {
@@ -3607,10 +3598,11 @@ PhoneGap.Media.onStatus = function(id, msg, value) {
             media.errorCallback(value);
         }
     }
+    else if (msg == Media.MEDIA_POSITION) {
+        media._position = value;
+    }
 };
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -3693,8 +3685,6 @@ PhoneGap.addConstructor(function() {
     }
 });
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -3817,8 +3807,6 @@ PhoneGap.addConstructor(function() {
     }
 });
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -3908,8 +3896,6 @@ PositionError.PERMISSION_DENIED = 1;
 PositionError.POSITION_UNAVAILABLE = 2;
 PositionError.TIMEOUT = 3;
 }
-
-
 /*
  * PhoneGap is available under *either* the terms of the modified BSD license *or* the
  * MIT License (2008). See http://opensource.org/licenses/alphabetical for full text.
@@ -4338,5 +4324,3 @@ PhoneGap.addConstructor(function() {
     }
 });
 }
-
-

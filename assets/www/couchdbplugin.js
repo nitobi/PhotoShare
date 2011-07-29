@@ -1,5 +1,10 @@
 var CouchDbPlugin = {
    started: false,
+   // TODO: gotta find a better way to do this
+   installStatus: function(completed, total) {
+     var progress = Math.round((completed * 100) / total);
+     setMessage("Installing CouchDB: "+progress+"%");
+   },
    start: function(successCallback, failureCallback) {
      return PhoneGap.exec(successCallback,
                           failureCallback,
