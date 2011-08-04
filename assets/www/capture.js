@@ -70,7 +70,7 @@ function onCaptureFailure(message) {
 }
 
 function capturePhoto() {
-  navigator.camera.getPicture(onCaptureSuccess, onCaptureFailure, { quality: 50 });
+  navigator.camera.getPicture(onCaptureSuccess, onCaptureFailure, { quality: 10 });
 }
 
 function onListSuccess(data) {
