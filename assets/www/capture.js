@@ -26,12 +26,17 @@ function setMessage(message) {
   document.getElementById('message').innerHTML = message;
 }
 
-function onStartSuccess(message) {
-  alert("Success: "+message);
+function setSyncPoint(syncpoint) {
+  document.getElementById('syncpoint').innerHTML = "PhotoShare is in sync with: " + syncpoint;
+}
+
+function onStartSuccess(startObj) {
+  alert("Success: "+startObj.message);
   CouchDbPlugin.started = true;
   // enabling buttons
   toggleButtons();
   setMessage('');
+  setSyncPoint(startObj.syncpoint);
 }
 
 function onStartFailure(error) {

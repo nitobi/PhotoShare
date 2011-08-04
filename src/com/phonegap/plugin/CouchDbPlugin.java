@@ -2,8 +2,10 @@ package com.phonegap.plugin;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.couchbase.libcouch.AndCouch;
@@ -16,10 +18,17 @@ import com.phonegap.api.PluginResult.Status;
 public class CouchDbPlugin extends Plugin {
 	
 	protected static final String TAG = "CouchDbPlugin";
+	public static final String PREFS_NAME = "CouchDbPrefs";
 	private ServiceConnection couchServiceConnection;
 	private String url = null;
 	private String dbName = null;
 	private String callbackId = null;
+	
+	private String getSyncPoint() {
+		SharedPreferences settings = this.ctx.getSharedPreferences(PREFS_NAME, 0);
+		String syncPoint = settings.getString("syncpoint", "http://couchbase.ic.ht/photo-share");
+		return syncPoint;
+	}
 
 	@Override
 	public PluginResult execute(String action, JSONArray data, String callbackId) {
@@ -85,9 +94,20 @@ public class CouchDbPlugin extends Plugin {
 		public void couchStarted(String host, int port) {
 			String url = "http://" + host + ":" + Integer.toString(port) + "/";
 			ensureDoc("photoshare", url);
-			success(new PluginResult(Status.OK, "CouchDB started!"), callbackId);
-			//Log.d(TAG, (new PluginResult(Status.OK, "Couch Started!")).toSuccessCallbackString(callbackId));
-			Log.d(TAG, "Couch Started!");
+			String syncPoint = getSyncPoint();
+			//success(new PluginResult(Status.OK, "{\"syncpoint\":"+syncPoint+",\"message\":\"CouchDB started!\"}"), callbackId);
+			try {
+				JSONObject startObj = new JSONObject();
+				startObj.put("message", "Couch Started!");
+				startObj.put("syncpoint", syncPoint);
+				success(new PluginResult(Status.OK, startObj), callbackId);
+				// Log.d(TAG, (new PluginResult(Status.OK,
+				// "Couch Started!")).toSuccessCallbackString(callbackId));
+				Log.d(TAG, "Couch Started!");
+			} catch(JSONException e) {
+				Log.e(TAG, "Error while creating response message");
+				e.printStackTrace();
+			}
 		}
 
 		@Override
