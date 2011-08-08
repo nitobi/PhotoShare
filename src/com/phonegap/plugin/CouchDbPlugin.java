@@ -1,5 +1,8 @@
 package com.phonegap.plugin;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -9,6 +12,7 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.res.AssetManager;
 import android.util.Log;
 
 import com.couchbase.libcouch.AndCouch;
@@ -73,16 +77,21 @@ public class CouchDbPlugin extends Plugin {
 	private void ensureDoc(String dbName, String url) {
 
 		try {
-			String ddocUrl = url + dbName;
+			String data = readAsset(ctx.getAssets(), dbName + ".json");
+			String ddocUrl = url + dbName + "/_design/" + dbName;;
 			Log.d(TAG, "ddocUrl: "+ddocUrl);
 
 			AndCouch req = AndCouch.get(ddocUrl);
 
 			if (req.status == 404) {
 				req = AndCouch.put(url + dbName, null);
-				Log.d(TAG, "New DOC "+req.status);
+				AndCouch.put(ddocUrl, data);
 			}
 		} catch (JSONException e) {
+			Log.e(TAG, e.getMessage());
+			e.printStackTrace();
+		} catch(IOException e) {
+			Log.e(TAG, e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -100,18 +109,9 @@ public class CouchDbPlugin extends Plugin {
 			String url = "http://" + host + ":" + Integer.toString(port) + "/";
 			ensureDoc("photoshare", url);
 			String syncPoint = getSyncPoint();
-			try {
-				JSONObject startObj = new JSONObject();
-				startObj.put("message", "Couch Started!");
-				startObj.put("syncpoint", syncPoint);
-				success(new PluginResult(Status.OK, startObj), callbackId);
 				// loading URL from couchDB
-				webView.loadUrl(url);
-				Log.d(TAG, "Couch Started!");
-			} catch(JSONException e) {
-				Log.e(TAG, "Error while creating response message");
-				e.printStackTrace();
-			}
+			webView.loadUrl(url + "photoshare/_design/photoshare/index.html");
+			Log.d(TAG, "Couch Started!");
 		}
 
 		@Override
@@ -143,6 +143,15 @@ public class CouchDbPlugin extends Plugin {
 	private void startCouch() {
 		Log.d(TAG, "Starting CouchDB");
 		couchServiceConnection = CouchDB.getService(this.ctx.getBaseContext(), null, "release-0.1", mCallback);
+	}
+	
+	public static String readAsset(AssetManager assets, String path) throws IOException {
+		InputStream is = assets.open(path);
+		int size = is.available();
+		byte[] buffer = new byte[size];
+		is.read(buffer);
+		is.close();
+		return new String(buffer);
 	}
 	
 	@Override
