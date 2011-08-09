@@ -1,0 +1,56 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>PhoneGap</title>
+    <style type="text/css">
+    #syncpoint {
+      padding: 1em;
+    }
+    button {
+      height: 42px;
+      padding: 0 8px;
+      color: #151b24;
+      line-height: 42px;
+      text-shadow: #fff 0px 1px 1px;
+      -webkit-border-radius: 16px;
+      border: 1px solid #31363d;
+      background: -webkit-gradient(linear, left top, left bottom, from(#cbcfd4), to(#939ba6));
+      -webkit-background-clip: padding-box;
+    }
+    #overlay {
+      z-index: 5;
+      position: absolute;
+      margin-left: auto;
+      margin-right: auto;
+      top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0);
+    }
+    #overlay-image {
+      position: absolute;
+      top:25%;bottom:25%;
+    }
+    </style>
+  </head>
+  <body style="text-align:center;">
+    <h1>Welcome to PhotoShare</h1>
+    <div id="syncpoint"></div>
+
+    <script type="text/javascript" charset="utf-8" src="vendor/phonegap/phonegap-1.0.0rc3.js"></script>
+    <script type="text/javascript" charset="utf-8" src="script/couchdbplugin.js"></script>
+    <button type="button" id="capturePhoto"
+            onclick="capturePhoto();" disabled="disabled">
+      Take a picture!
+    </button>
+    <button type="button" id="listPhotos"
+            onclick="listPictures();" disabled="disabled">
+      List Pictures
+    </button>
+    <hr />
+    <div id="message"></div>
+    <h3>Pictures in CouchDB</h3>
+    <div id="pictures"></div>
+    <div id="overlay" style="display:none;">
+      <img id="overlay-image" src="http://www.phonegap.com/assets/carousel/dw5_4.jpg" alt="" />
+    </div>
+    <script type="text/javascript" charset="utf-8" src="script/capture.js"></script>
+  </body>
+</html>

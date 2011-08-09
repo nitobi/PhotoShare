@@ -5,13 +5,11 @@ import java.io.InputStream;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.util.Log;
 
@@ -27,20 +25,18 @@ public class CouchDbPlugin extends Plugin {
 	protected static final String TAG = "CouchDbPlugin";
 	public static final String PREFS_NAME = "CouchDbPrefs";
 	private ServiceConnection couchServiceConnection;
-	private String callbackId = null;
 	private ProgressDialog installProgress;
 	
-	private String getSyncPoint() {
-		SharedPreferences settings = this.ctx.getSharedPreferences(PREFS_NAME, 0);
-		String syncPoint = settings.getString("syncpoint", "http://couchbase.ic.ht/photo-share");
-		return syncPoint;
-	}
+//	private String getSyncPoint() {
+//		SharedPreferences settings = this.ctx.getSharedPreferences(PREFS_NAME, 0);
+//		String syncPoint = settings.getString("syncpoint", "http://couchbase.ic.ht/photo-share");
+//		return syncPoint;
+//	}
 
 	@Override
 	public PluginResult execute(String action, JSONArray data, String callbackId) {
 		Log.d(TAG, "CouchDbPlugin called with "+action);
 		PluginResult result = null;
-		this.callbackId = callbackId;
 		if(action.equals("start")) {
 			startCouch();
 			result = new PluginResult(Status.NO_RESULT);
@@ -78,14 +74,17 @@ public class CouchDbPlugin extends Plugin {
 
 		try {
 			String data = readAsset(ctx.getAssets(), dbName + ".json");
-			String ddocUrl = url + dbName + "/_design/" + dbName;;
+			Log.d(TAG, data);
+			String ddocUrl = url + dbName + "/_design/" + dbName;
 			Log.d(TAG, "ddocUrl: "+ddocUrl);
 
 			AndCouch req = AndCouch.get(ddocUrl);
 
 			if (req.status == 404) {
 				req = AndCouch.put(url + dbName, null);
-				AndCouch.put(ddocUrl, data);
+				Log.d(TAG, "Database Status "+req.status);
+				req = AndCouch.put(ddocUrl, data);
+				Log.d(TAG, "Request Status Data "+req.status);
 			}
 		} catch (JSONException e) {
 			Log.e(TAG, e.getMessage());
@@ -108,8 +107,9 @@ public class CouchDbPlugin extends Plugin {
 
 			String url = "http://" + host + ":" + Integer.toString(port) + "/";
 			ensureDoc("photoshare", url);
-			String syncPoint = getSyncPoint();
+			//String syncPoint = getSyncPoint();
 				// loading URL from couchDB
+			webView.clearHistory();
 			webView.loadUrl(url + "photoshare/_design/photoshare/index.html");
 			Log.d(TAG, "Couch Started!");
 		}
