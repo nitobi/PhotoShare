@@ -45,6 +45,8 @@ public class CouchDbPlugin extends Plugin {
 			startCouch();
 			result = new PluginResult(Status.NO_RESULT);
 			result.setKeepCallback(true);
+		} else if(action.equals("getSyncPoint")) {
+			result = new PluginResult(Status.OK, getSyncPoint());
 		}
 		return result;
 	}
@@ -78,7 +80,6 @@ public class CouchDbPlugin extends Plugin {
 
 		try {
 			String data = readAsset(ctx.getAssets(), dbName + ".json");
-			Log.d(TAG, data);
 			String ddocUrl = url + dbName + "/_design/" + dbName;
 			Log.d(TAG, "ddocUrl: "+ddocUrl);
 
@@ -109,12 +110,10 @@ public class CouchDbPlugin extends Plugin {
 
 			String url = "http://" + host + ":" + Integer.toString(port) + "/";
 			ensureDoc("photoshare", url);
-			String syncPoint = getSyncPoint();
 			String location = url + "photoshare/_design/photoshare/index.html";
 			try {
 				JSONObject startObj = new JSONObject();
 				startObj.put("message", "Couch Started!");
-				startObj.put("syncpoint", syncPoint);
 				startObj.put("location", location);
 				success(new PluginResult(Status.OK, startObj), callbackId);
 				Log.d(TAG, "Couch Started!");

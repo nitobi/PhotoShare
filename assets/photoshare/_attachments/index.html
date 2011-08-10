@@ -34,7 +34,8 @@
     <h1>Welcome to PhotoShare</h1>
     <div id="syncpoint"></div>
 
-    <script type="text/javascript" charset="utf-8" src="vendor/phonegap/phonegap-1.0.0rc3.js"></script>
+    <script type="text/javascript" charset="utf-8" src="vendor/phonegap/phonegap-1.0.0.js"></script>
+    <script type="text/javascript" charset="utf-8" src="vendor/zepto/zepto.min.js"></script>
     <script type="text/javascript" charset="utf-8" src="script/couchdbplugin.js"></script>
     <button type="button" id="capturePhoto"
             onclick="capturePhoto();" disabled="disabled">
@@ -43,6 +44,10 @@
     <button type="button" id="listPhotos"
             onclick="listPictures();" disabled="disabled">
       List Pictures
+    </button>
+    <button type="button" id="reloadPage"
+            onclick="window.location.reload();">
+      Reload Page
     </button>
     <hr />
     <div id="message"></div>

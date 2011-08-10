@@ -1,3 +1,6 @@
+// Cross-origin problem when loading from couchDB
+PhoneGap.UsePolling = true;
+
 var pictures = document.getElementById("pictures");
 
 function addImage(imageData) {
@@ -25,31 +28,18 @@ function toggleButtons() {
 function setMessage(message) {
   document.getElementById('message').innerHTML = message;
 }
-
-function setSyncPoint(syncpoint) {
+function onSyncPointSuccess(syncpoint) {
   document.getElementById('syncpoint').innerHTML = "PhotoShare is in sync with: " + syncpoint;
-}
-
-function onStartSuccess(startObj) {
-  alert("Success: "+startObj.message);
-  CouchDbPlugin.started = true;
-  // enabling buttons
   toggleButtons();
-  setMessage('');
-  setSyncPoint(startObj.syncpoint);
 }
 
-function onStartFailure(error) {
-  alert("Error: "+error);
+function onSyncPointFailure(error) {
+  alert(error);
 }
 
 document.addEventListener("deviceready", function() {
   console.log('initialized');
-  PhoneGap.UsePolling = true;
-  if(CouchDbPlugin.started == false) {
-    setMessage('starting CouchDB');
-    CouchDbPlugin.start(onStartSuccess, onStartFailure);
-  }
+  CouchDbPlugin.getSyncPoint(onSyncPointSuccess, onSyncPointFailure);
 }, true);
 
 function onCaptureSuccess(imageData) {
@@ -62,7 +52,7 @@ function onCaptureSuccess(imageData) {
     alert(error);
   };
   setMessage('Saving image...');
-  CouchDbPlugin.save({imageData: imageData}, success, failure);
+//  CouchDbPlugin.save({imageData: imageData}, success, failure);
 }
 
 function onCaptureFailure(message) {
@@ -93,7 +83,7 @@ function onListSuccess(data) {
   else {
     for(var i = 0, j = dbObj.total_rows ; i < j ; i++) {
       setMessage('Fetching images from the DB...');
-      CouchDbPlugin.fetch(dbObj.rows[i].id, onFetchSuccess, onFetchFailure);
+      //CouchDbPlugin.fetch(dbObj.rows[i].id, onFetchSuccess, onFetchFailure);
     }
   }
   toggleButtons();
@@ -106,7 +96,7 @@ function listPictures() {
   // resetting the pictures
   toggleButtons();
   pictures.innerHTML = "";
-  CouchDbPlugin.list(onListSuccess, onListFailure);
+  //CouchDbPlugin.list(onListSuccess, onListFailure);
 }
 
 function onImageClick() {
