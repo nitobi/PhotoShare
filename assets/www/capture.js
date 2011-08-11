@@ -1,6 +1,6 @@
 function onStartSuccess(startObj) {
   alert("Success: "+startObj.message);
-  document.location = startObj.location;
+  location.replace(startObj.location);
   CouchDbPlugin.started = true;
 }
 

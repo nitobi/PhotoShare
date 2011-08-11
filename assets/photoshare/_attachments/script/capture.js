@@ -1,14 +1,16 @@
-// Cross-origin problem when loading from couchDB
+// Use PhoneGap polling because of cross-origin&speed problem when loading from couchDB
 PhoneGap.UsePolling = true;
 
 var pictures = document.getElementById("pictures");
 
-function addImage(imageData) {
+// Helper Methods
+
+function addImage(imageSrc) {
     var newImg = document.createElement("img");
     newImg.style.width = "120px";
     newImg.style.float = "left";
     newImg.style.padding = "1em";
-    newImg.src = "data:image/jpeg;base64,"+imageData;
+    newImg.src = imageSrc;
     newImg.onclick = onImageClick;
     pictures.appendChild(newImg);
 }
@@ -28,9 +30,13 @@ function toggleButtons() {
 function setMessage(message) {
   document.getElementById('message').innerHTML = message;
 }
+
+// Syncpoint
+
 function onSyncPointSuccess(syncpoint) {
   document.getElementById('syncpoint').innerHTML = "PhotoShare is in sync with: " + syncpoint;
   toggleButtons();
+  listPictures();
 }
 
 function onSyncPointFailure(error) {
@@ -42,17 +48,24 @@ document.addEventListener("deviceready", function() {
   CouchDbPlugin.getSyncPoint(onSyncPointSuccess, onSyncPointFailure);
 }, true);
 
+// Capture
+
 function onCaptureSuccess(imageData) {
-  var success = function(response) {
-    alert(response);
+  var onSaveSuccess = function(imageDoc) {
+    addImage('/photoshare/'+imageDoc.id+'/original.jpg');
     setMessage('');
-    addImage(imageData);
   };
-  var failure = function(error) {
-    alert(error);
+  var onSaveFailure = function(xhr, type) {
+    alert(type + ' ' + xhr.responseText);
   };
   setMessage('Saving image...');
-//  CouchDbPlugin.save({imageData: imageData}, success, failure);
+  var imageDoc = {"_attachments": {
+    "original.jpg": {
+      "content-type": "image/jpeg",
+      "data": imageData
+    }
+  }};
+  CouchDbPlugin.save(imageDoc, onSaveSuccess, onSaveFailure);
 }
 
 function onCaptureFailure(message) {
@@ -63,32 +76,23 @@ function capturePhoto() {
   navigator.camera.getPicture(onCaptureSuccess, onCaptureFailure, { quality: 10 });
 }
 
-function onListSuccess(data) {
-  var dbObj = JSON.parse(data);
-  var onFetchSuccess = function(image) {
-    setMessage('');
-    // updating DOM
-    console.log(image);
-    // adding image to existing listing
-    addImage(JSON.parse(image).imageData);
-  }
-  var onFetchFailure = function(error) {
-    setMessage(error);
-    console.log('Failure while fetching image');
-  }
+// List
 
+function onListSuccess(dbObj) {
   if(dbObj.total_rows == 0) {
     pictures.innerHTML = "<p>No pictures in the DB</p>";
   }
   else {
-    for(var i = 0, j = dbObj.total_rows ; i < j ; i++) {
-      setMessage('Fetching images from the DB...');
-      //CouchDbPlugin.fetch(dbObj.rows[i].id, onFetchSuccess, onFetchFailure);
+    // FIXME: there should be a better way to skip _design/photoshare doc
+    setMessage('Fetching images from the DB...');
+    for(var i = 0, j = dbObj.total_rows - 1 ; i < j ; i++) {
+      addImage('/photoshare/'+dbObj.rows[i].id+'/original.jpg');
     }
+    setMessage('');
   }
   toggleButtons();
 };
-var onListFailure = function(error) {
+var onListFailure = function(xhr, error) {
   alert(error);
   toggleButtons();
 };
@@ -96,11 +100,10 @@ function listPictures() {
   // resetting the pictures
   toggleButtons();
   pictures.innerHTML = "";
-  //CouchDbPlugin.list(onListSuccess, onListFailure);
+  CouchDbPlugin.list(onListSuccess, onListFailure);
 }
 
 function onImageClick() {
-  console.log('image clicked !');
   var overlay = document.getElementById('overlay');
   var overlayImage = document.getElementById('overlay-image');
   console.log(this.src);
