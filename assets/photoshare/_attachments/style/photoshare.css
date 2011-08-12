@@ -1,0 +1,28 @@
+#syncpoint {
+  padding: 1em;
+}
+button {
+  height: 42px;
+  padding: 0 8px;
+  color: #151b24;
+  line-height: 42px;
+  text-shadow: #fff 0px 1px 1px;
+  -webkit-border-radius: 16px;
+  border: 1px solid #31363d;
+  background: -webkit-gradient(linear, left top, left bottom, from(#cbcfd4), to(#939ba6));
+  -webkit-background-clip: padding-box;
+}
+#photoview {
+  -webkit-transition-duration: 1s;
+  -webkit-transform: translate(100%, 0);
+  position: absolute;
+  margin-left: auto;
+  margin-right: auto;
+  top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,1);
+}
+#comments {
+  color: black;
+}
+#comments * {
+  vertical-align: middle;
+}
