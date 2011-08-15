@@ -18,15 +18,6 @@ function addImage(imageId) {
     $('#pictures').append(newImg);
 }
 
-function toggleButton() {
-  var capture = $('#capturePhoto');
-  if(capture.attr('disabled')) {
-    capture.removeAttr('disabled');
-  } else {
-    // capture.attr('disabled', true);
-  }
-}
-
 function setMessage(message) {
   $('#message').html(message);
 }
@@ -109,17 +100,15 @@ function onListSuccess(dbObj) {
     // FIXME: there should be a better way to skip _design/photoshare doc
     setMessage('Fetching images from the DB...');
     for(var i = 0, j = dbObj.total_rows ; i < j ; i++) {
-      if(dbObj.rows[i].id != '_design/photoshare') {
+      if(dbObj.rows[i].id.indexOf('_design/') != 0) {
         addImage(dbObj.rows[i].id);
       }
     }
     setMessage('');
   }
-  toggleButton();
 };
 var onListFailure = function(xhr, error) {
   alert("onListFailure " +error);
-  toggleButton();
 };
 
 function changesCallback(opts) {
@@ -187,11 +176,16 @@ function backKeyDown() {
   $('#main').show();
 }
 
+function startCamera() {
+  var capture = $('#capturePhoto');
+  capture.removeAttr('disabled');
+}
+
+
 function start() {
     // setup listing of pictures and auto refresh
     setupChanges();
     setupSync();
-    toggleButton();
 }
 
 var started = false;
@@ -201,6 +195,6 @@ function startApp() {
     start();
 };
 
-document.addEventListener("deviceready", startApp, true);
+document.addEventListener("deviceready", startCamera, true);
 document.addEventListener("load", startApp, true);
-$('body').ready(startApp);
+// $('body').ready(startApp);

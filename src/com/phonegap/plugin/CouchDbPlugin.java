@@ -32,7 +32,7 @@ public class CouchDbPlugin extends Plugin {
 	
 	private String getSyncPoint() {
 		SharedPreferences settings = this.ctx.getSharedPreferences(PREFS_NAME, 0);
-		String syncPoint = settings.getString("syncpoint", "http://couchbase.ic.ht/photo-share");
+		String syncPoint = settings.getString("syncpoint", "http://couchbase.ic.ht/photoshare");
 		return syncPoint;
 	}
 
