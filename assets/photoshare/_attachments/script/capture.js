@@ -196,5 +196,4 @@ function startApp() {
 };
 
 document.addEventListener("deviceready", startCamera, true);
-document.addEventListener("load", startApp, true);
-// $('body').ready(startApp);
+$('body').ready(startApp);
