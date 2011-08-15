@@ -121,9 +121,39 @@ var onListFailure = function(xhr, error) {
   alert("onListFailure " +error);
   toggleButton();
 };
+
+function changesCallback(opts) {
+  onDBChange();
+  $.ajax({
+    type: 'GET',
+    url: '/photoshare/_changes?feed=longpoll&since='+opts.last_seq,
+    dataType: 'json',
+    success: setupChanges,
+    error: function() {alert("error with changes")}
+  });
+}
+
+
+function setupChanges() {
+  $.ajax({
+    type: 'GET',
+    url: '/photoshare',
+    dataType: 'json',
+    success: function(resp) {
+      changesCallback({last_seq : resp.update_seq});
+    },
+    error: function() {alert("error with changes")}
+  });
+
+}
+
+function onDBChange() {
+  listPictures();
+}
+
+
 function listPictures() {
   // resetting the pictures
-  toggleButton();
   $('#pictures').html("");
   $.ajax({
     type: 'GET',
@@ -159,7 +189,7 @@ function backKeyDown() {
 
 function start() {
     // setup listing of pictures and auto refresh
-    listPictures();
+    setupChanges();
     setupSync();
     toggleButton();
 }
