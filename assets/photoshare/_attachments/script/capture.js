@@ -1,5 +1,5 @@
 // Use PhoneGap polling because of cross-origin&speed problem when loading from couchDB
-// PhoneGap.UsePolling = true;
+PhoneGap.UsePolling = true;
 
 var selectedPictureId = null;
 
@@ -23,7 +23,7 @@ function toggleButton() {
   if(capture.attr('disabled')) {
     capture.removeAttr('disabled');
   } else {
-    capture.attr('disabled', true);
+    // capture.attr('disabled', true);
   }
 }
 
@@ -62,6 +62,7 @@ function setupSync() {
 // Capture
 
 function onCaptureSuccess(imageData) {
+  console.log("onCaptureSuccess");
   var onSaveSuccess = function(imageDoc) {
     addImage(imageDoc.id);
     setMessage('');
@@ -71,14 +72,22 @@ function onCaptureSuccess(imageData) {
   };
   setMessage('Saving image...');
   var imageDoc = {
-    "comments": ['First Comment'],
-    "_attachments": {
+    created_at: new Date(),
+    _attachments: {
       "original.jpg": {
-        "content-type": "image/jpeg",
-        "data": imageData
+        content_type: "image/jpeg",
+        data: imageData
       }
   }};
-  CouchDbPlugin.save(imageDoc, onSaveSuccess, onSaveFailure);
+  $.ajax({
+    type: 'POST',
+    url: '/photoshare',
+    data: JSON.stringify(imageDoc),
+    dataType: 'json',
+    contentType: 'application/json',
+    success: onSaveSuccess,
+    error: onSaveFailure
+  });
 }
 
 function onCaptureFailure(message) {
@@ -86,6 +95,7 @@ function onCaptureFailure(message) {
 }
 
 function capturePhoto() {
+  console.log("capturePhoto");
   navigator.camera.getPicture(onCaptureSuccess, onCaptureFailure, { quality: 10 });
 }
 
@@ -151,13 +161,13 @@ function start() {
     // setup listing of pictures and auto refresh
     listPictures();
     setupSync();
+    toggleButton();
 }
 
 var started = false;
 function startApp() {
     if (started) return;
     started = true;
-    console.log('startApp');
     start();
 };
 
