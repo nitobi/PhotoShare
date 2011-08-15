@@ -40,13 +40,20 @@ function onSyncPointSuccess(syncpoint) {
 }
 
 function onSyncPointFailure(error) {
-  alert(error);
+  alert("onSyncPointFailure "+error);
 }
 
-document.addEventListener("deviceready", function() {
-  console.log('initialized');
-  CouchDbPlugin.getSyncPoint(onSyncPointSuccess, onSyncPointFailure);
-}, true);
+var started = false;
+function startApp() {
+    if (started) return;
+    started = true;
+    console.log('initialized');
+    listPictures();
+    CouchDbPlugin.getSyncPoint(onSyncPointSuccess, onSyncPointFailure); 
+};
+
+document.addEventListener("deviceready", startApp, true);
+document.addEventListener("load", startApp, true);
 
 // Capture
 
@@ -56,7 +63,7 @@ function onCaptureSuccess(imageData) {
     setMessage('');
   };
   var onSaveFailure = function(xhr, type) {
-    alert(type + ' ' + xhr.responseText);
+    alert("onSaveFailure "+type + ' ' + xhr.responseText);
   };
   setMessage('Saving image...');
   var imageDoc = {
@@ -71,7 +78,7 @@ function onCaptureSuccess(imageData) {
 }
 
 function onCaptureFailure(message) {
-  alert('Failed because: ' + message);
+  alert('onCaptureFailure ' + message);
 }
 
 function capturePhoto() {
@@ -97,14 +104,20 @@ function onListSuccess(dbObj) {
   toggleButton();
 };
 var onListFailure = function(xhr, error) {
-  alert(error);
+  alert("onListFailure " +error);
   toggleButton();
 };
 function listPictures() {
   // resetting the pictures
   toggleButton();
   $('#pictures').html("");
-  CouchDbPlugin.list(onListSuccess, onListFailure);
+  $.ajax({
+    type: 'GET',
+    url: '/photoshare/_all_docs',
+    dataType: 'json',
+    success: onListSuccess,
+    error: onListFailure
+  });
 }
 
 function sendComment() {
@@ -114,8 +127,7 @@ function sendComment() {
 
 function onImageClick() {
   selectedPictureId = this.id;
-  $('#photoview-image').attr('src', this.src);
-                       .css('width', '100%');
+  $('#photoview-image').attr('src', this.src).css('width', '100%');
   $('#photoview').css("-webkit-transform","translate(0,0)");
   $('#photoview').show();
   $('#main').hide();
