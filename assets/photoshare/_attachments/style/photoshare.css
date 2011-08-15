@@ -20,6 +20,13 @@ button {
   margin-right: auto;
   top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,1);
 }
+
+.thumbnail {
+  width: "60px";
+  float: "left";
+  padding: "2px";
+}
+
 #comments {
   color: black;
 }
