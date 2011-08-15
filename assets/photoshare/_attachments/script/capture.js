@@ -1,5 +1,5 @@
 // Use PhoneGap polling because of cross-origin&speed problem when loading from couchDB
-PhoneGap.UsePolling = true;
+// PhoneGap.UsePolling = true;
 
 var selectedPictureId = null;
 
@@ -33,27 +33,31 @@ function setMessage(message) {
 
 // Syncpoint
 
-function onSyncPointSuccess(syncpoint) {
-  $('#syncpoint').html("PhotoShare is in sync with: " + syncpoint);
-  toggleButton();
-  listPictures();
+function setupSync() {
+    var syncpoint = "http://couchbase.ic.ht/photoshare";
+    $.ajax({
+      type: 'POST',
+      url: '/_replicate',
+      data: JSON.stringify({
+          source : syncpoint,
+          target : "photoshare"
+      }),
+      dataType: 'json',
+      contentType: 'application/json'
+    });
+    $.ajax({
+      type: 'POST',
+      url: '/_replicate',
+      data: JSON.stringify({
+          target : syncpoint,
+          source : "photoshare"
+      }),
+      dataType: 'json',
+      contentType: 'application/json'
+    });
 }
 
-function onSyncPointFailure(error) {
-  alert("onSyncPointFailure "+error);
-}
 
-var started = false;
-function startApp() {
-    if (started) return;
-    started = true;
-    console.log('initialized');
-    listPictures();
-    CouchDbPlugin.getSyncPoint(onSyncPointSuccess, onSyncPointFailure); 
-};
-
-document.addEventListener("deviceready", startApp, true);
-document.addEventListener("load", startApp, true);
 
 // Capture
 
@@ -143,3 +147,20 @@ function backKeyDown() {
   $('#main').show();
 }
 
+function start() {
+    // setup listing of pictures and auto refresh
+    listPictures();
+    setupSync();
+}
+
+var started = false;
+function startApp() {
+    if (started) return;
+    started = true;
+    console.log('startApp');
+    start();
+};
+
+document.addEventListener("deviceready", startApp, true);
+document.addEventListener("load", startApp, true);
+$('body').ready(startApp);
