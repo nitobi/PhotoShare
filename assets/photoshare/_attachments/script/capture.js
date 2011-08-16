@@ -18,6 +18,16 @@ function addImage(imageId) {
     $('#pictures').append(newImg);
 }
 
+function addComment(commentDoc) {
+  $('#comments').prepend('<span>'+commentDoc.comment+'</span><br/>')
+                .prepend('<span class="author">'+commentDoc.author+' wrote:</span> ');
+}
+
+function clearPhotoView() {
+  $('#comments').html('');
+  $('#photoview-image').attr('src', '');
+}
+
 function toggleButton() {
   var capture = $('#capturePhoto');
   if(capture.attr('disabled')) {
@@ -60,7 +70,7 @@ function onCaptureSuccess(imageData) {
   };
   setMessage('Saving image...');
   var imageDoc = {
-    "comments": ['First Comment'],
+    "type": "photo",
     "_attachments": {
       "original.jpg": {
         "content-type": "image/jpeg",
@@ -88,9 +98,7 @@ function onListSuccess(dbObj) {
     // FIXME: there should be a better way to skip _design/photoshare doc
     setMessage('Fetching images from the DB...');
     for(var i = 0, j = dbObj.total_rows ; i < j ; i++) {
-      if(dbObj.rows[i].id != '_design/photoshare') {
-        addImage(dbObj.rows[i].id);
-      }
+      addImage(dbObj.rows[i].id);
     }
     setMessage('');
   }
@@ -104,23 +112,64 @@ function listPictures() {
   // resetting the pictures
   toggleButton();
   $('#pictures').html("");
-  CouchDbPlugin.list(onListSuccess, onListFailure);
+  $.ajax({
+   type: 'GET',
+   url: '/photoshare/_design/photoshare/_view/photos',
+   dataType: 'json',
+   success: onListSuccess,
+   error: onListFailure 
+  });
 }
 
 function sendComment() {
-  // TODO: save comment in the db
-    $('#comments').prepend('<p>'+$('#comment-area').val()+'</p>');
+    var commentDoc = {
+      "type": "comment",
+      "photo": selectedPictureId,
+      "author": $('#comment-author').val(),
+      "comment": $('#comment-text').val()
+    };
+
+    var onCommentSuccess = function(response) {
+      addComment(commentDoc);
+    };
+
+    var onCommentFailure = function(xhr, type) {
+      alert(type + ' ' + xhr.responseText);
+    };
+
+    CouchDbPlugin.save(commentDoc, onCommentSuccess, onCommentFailure);
 }
 
 function onImageClick() {
+  // FIXME: maybe use a hidden field instead?
   selectedPictureId = this.id;
-  $('#photoview-image').attr('src', this.src);
+  $('#photoview-image').attr('src', this.src)
                        .css('width', '100%');
   $('#photoview').css("-webkit-transform","translate(0,0)");
-  $('#photoview').show();
-  $('#main').hide();
-  $('#send-comment').click(sendComment);
-  document.addEventListener('backbutton', backKeyDown, true);
+
+  var onFetchSuccess = function(response) {
+    console.log(JSON.stringify(response));
+    for(var i = 0 , j = response.total_rows - response.offset ; i < j ; i++) {
+      addComment(response.rows[i].value);
+    }
+    $('#photoview').show();
+    $('#main').hide();
+    $('#send-comment').click(sendComment);
+    document.addEventListener('backbutton', backKeyDown, true);
+  };
+
+  var onFetchFailure = function(xhr, type) {
+    console.log(type + ' ' + xhr.responseText);
+  }
+
+  $.ajax({
+   type: 'GET',
+   url: '/photoshare/_design/photoshare/_view/photo_and_comments?startkey=["'+selectedPictureId+'",1]',
+   dataType: 'json',
+   contentType: 'application/json',
+   success: onFetchSuccess,
+   error: onFetchFailure
+  });
 }
 
 function backKeyDown() {
@@ -128,6 +177,7 @@ function backKeyDown() {
   $('#send-comment').unbind('click');
   $('#photoview').css("-webkit-transform","translate(100%,0)");
   $('#photoview').hide();
+  clearPhotoView();
   $('#main').show();
 }
 

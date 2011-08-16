@@ -27,9 +27,17 @@ button {
   padding: "2px";
 }
 
-#comments {
+#comment-form {
   color: black;
 }
-#comments * {
+#comment-form * {
   vertical-align: middle;
+}
+
+#comment-author {
+  width: 50px;
+}
+
+.author {
+  font-weight: bold;
 }
