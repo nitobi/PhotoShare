@@ -15,7 +15,7 @@ function addImage(imageId) {
                         src: '/photoshare/'+imageId+'/original.jpg'
                        });
     newImg.click(onImageClick);
-    $('#pictures').append(newImg);
+    $('#pictures').prepend(newImg);
 }
 
 function setMessage(message) {
@@ -90,67 +90,45 @@ function capturePhoto() {
   navigator.camera.getPicture(onCaptureSuccess, onCaptureFailure, { quality: 10 });
 }
 
-// List
 
-function onListSuccess(dbObj) {
-  if(dbObj.total_rows == 0) {
-    $('#pictures').html("<p>No pictures in the DB</p>");
-  }
-  else {
-    // FIXME: there should be a better way to skip _design/photoshare doc
-    setMessage('Fetching images from the DB...');
-    for(var i = 0, j = dbObj.total_rows ; i < j ; i++) {
-      if(dbObj.rows[i].id.indexOf('_design/') != 0) {
-        addImage(dbObj.rows[i].id);
-      }
-    }
-    setMessage('');
-  }
-};
-var onListFailure = function(xhr, error) {
-  alert("onListFailure " +error);
-};
 
+var since = 0;
 function changesCallback(opts) {
-  onDBChange();
+  since = opts.last_seq || since;
+  onDBChange(opts);
   $.ajax({
     type: 'GET',
-    url: '/photoshare/_changes?feed=longpoll&since='+opts.last_seq,
+    url: '/photoshare/_changes?feed=longpoll&since='+since,
     dataType: 'json',
-    success: setupChanges,
-    error: function() {alert("error with changes")}
+    success: changesCallback,
+    error: function() {
+      setTimeout(function() {
+        console.log("error changes");
+        console.log(opts);
+        changesCallback({last_seq : since});
+      }, 250)
+    }
   });
 }
 
 
 function setupChanges() {
-  $.ajax({
-    type: 'GET',
-    url: '/photoshare',
-    dataType: 'json',
-    success: function(resp) {
-      changesCallback({last_seq : resp.update_seq});
-    },
-    error: function() {alert("error with changes")}
-  });
-
+  changesCallback({last_seq : 0});
 }
 
-function onDBChange() {
-  listPictures();
+function onDBChange(opts) {
+  // append new pictures to the view without disturbing old ones
+  listPictures(opts);
 }
 
-
-function listPictures() {
-  // resetting the pictures
-  $('#pictures').html("");
-  $.ajax({
-    type: 'GET',
-    url: '/photoshare/_all_docs',
-    dataType: 'json',
-    success: onListSuccess,
-    error: onListFailure
-  });
+function listPictures(data) {
+  if (data.results) {
+    for (var i = 0; i < data.results.length; i++){
+      if(!data.results[i].deleted && data.results[i].id.indexOf('_design/') != 0) {
+        addImage(data.results[i].id);
+      }
+    }
+  }
 }
 
 function sendComment() {
