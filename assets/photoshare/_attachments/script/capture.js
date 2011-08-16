@@ -15,7 +15,7 @@ function addImage(imageId) {
                         src: '/photoshare/'+imageId+'/original.jpg'
                        });
     newImg.click(onImageClick);
-    $('#pictures').append(newImg);
+    $('#pictures').prepend(newImg);
 }
 
 function addComment(commentDoc) {
@@ -43,82 +43,112 @@ function setMessage(message) {
 
 // Syncpoint
 
-function onSyncPointSuccess(syncpoint) {
-  $('#syncpoint').html("PhotoShare is in sync with: " + syncpoint);
-  toggleButton();
-  listPictures();
+function setupSync() {
+    var syncpoint = "http://couchbase.ic.ht/photoshare";
+    $.ajax({
+      type: 'POST',
+      url: '/_replicate',
+      data: JSON.stringify({
+          source : syncpoint,
+          target : "photoshare"
+      }),
+      dataType: 'json',
+      contentType: 'application/json'
+    });
+    $.ajax({
+      type: 'POST',
+      url: '/_replicate',
+      data: JSON.stringify({
+          target : syncpoint,
+          source : "photoshare"
+      }),
+      dataType: 'json',
+      contentType: 'application/json'
+    });
 }
 
-function onSyncPointFailure(error) {
-  alert(error);
-}
 
-document.addEventListener("deviceready", function() {
-  console.log('initialized');
-  CouchDbPlugin.getSyncPoint(onSyncPointSuccess, onSyncPointFailure);
-}, true);
 
 // Capture
 
 function onCaptureSuccess(imageData) {
+  console.log("onCaptureSuccess");
   var onSaveSuccess = function(imageDoc) {
     addImage(imageDoc.id);
     setMessage('');
   };
   var onSaveFailure = function(xhr, type) {
-    alert(type + ' ' + xhr.responseText);
+    alert("onSaveFailure "+type + ' ' + xhr.responseText);
   };
   setMessage('Saving image...');
   var imageDoc = {
-    "type": "photo",
-    "_attachments": {
+    type: "photo",
+    created_at: new Date(),
+    _attachments: {
       "original.jpg": {
-        "content-type": "image/jpeg",
-        "data": imageData
+        content_type: "image/jpeg",
+        data: imageData
       }
   }};
-  CouchDbPlugin.save(imageDoc, onSaveSuccess, onSaveFailure);
+  $.ajax({
+    type: 'POST',
+    url: '/photoshare',
+    data: JSON.stringify(imageDoc),
+    dataType: 'json',
+    contentType: 'application/json',
+    success: onSaveSuccess,
+    error: onSaveFailure
+  });
 }
 
 function onCaptureFailure(message) {
-  alert('Failed because: ' + message);
+  alert('onCaptureFailure ' + message);
 }
 
 function capturePhoto() {
+  console.log("capturePhoto");
   navigator.camera.getPicture(onCaptureSuccess, onCaptureFailure, { quality: 10 });
 }
 
-// List
 
-function onListSuccess(dbObj) {
-  if(dbObj.total_rows == 0) {
-    $('#pictures').html("<p>No pictures in the DB</p>");
-  }
-  else {
-    // FIXME: there should be a better way to skip _design/photoshare doc
-    setMessage('Fetching images from the DB...');
-    for(var i = 0, j = dbObj.total_rows ; i < j ; i++) {
-      addImage(dbObj.rows[i].id);
-    }
-    setMessage('');
-  }
-  toggleButton();
-};
-var onListFailure = function(xhr, error) {
-  alert(error);
-  toggleButton();
-};
-function listPictures() {
-  // resetting the pictures
-  toggleButton();
-  $('#pictures').html("");
+
+var since = 0;
+function changesCallback(opts) {
+  since = opts.last_seq || since;
+  onDBChange(opts);
   $.ajax({
-   type: 'GET',
-   url: '/photoshare/_design/photoshare/_view/photos',
-   dataType: 'json',
-   success: onListSuccess,
-   error: onListFailure 
+    type: 'GET',
+    url: '/photoshare/_changes?feed=longpoll&since='+since,
+    dataType: 'json',
+    success: changesCallback,
+    error: function() {
+      setTimeout(function() {
+        console.log("error changes");
+        console.log(opts);
+        changesCallback({last_seq : since});
+      }, 250)
+    }
   });
+}
+
+
+function setupChanges() {
+  changesCallback({last_seq : 0});
+}
+
+function onDBChange(opts) {
+  // append new pictures to the view without disturbing old ones
+  listPictures(opts);
+}
+
+function listPictures(data) {
+  if (data.results) {
+    for (var i = 0; i < data.results.length; i++) {
+      if(!data.results[i].deleted && data.results[i].id.indexOf('_design/') != 0) {
+        addImage(data.results[i].id);
+      }
+    }
+  }
 }
 
 function sendComment() {
@@ -143,8 +173,7 @@ function sendComment() {
 function onImageClick() {
   // FIXME: maybe use a hidden field instead?
   selectedPictureId = this.id;
-  $('#photoview-image').attr('src', this.src)
-                       .css('width', '100%');
+  $('#photoview-image').attr('src', this.src).css('width', '100%');
   $('#photoview').css("-webkit-transform","translate(0,0)");
 
   var onFetchSuccess = function(response) {
@@ -181,3 +210,24 @@ function backKeyDown() {
   $('#main').show();
 }
 
+function startCamera() {
+  var capture = $('#capturePhoto');
+  capture.removeAttr('disabled');
+}
+
+
+function start() {
+    // setup listing of pictures and auto refresh
+    setupChanges();
+    setupSync();
+}
+
+var started = false;
+function startApp() {
+    if (started) return;
+    started = true;
+    start();
+};
+
+document.addEventListener("deviceready", startCamera, true);
+$('body').ready(startApp);
