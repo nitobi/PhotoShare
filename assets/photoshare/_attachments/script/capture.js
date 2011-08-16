@@ -178,7 +178,7 @@ function onImageClick() {
 
   var onFetchSuccess = function(response) {
     console.log(JSON.stringify(response));
-    for(var i = 0 , j = response.total_rows - response.offset ; i < j ; i++) {
+    for(var i = 0 , j = response.rows.length ; i < j ; i++) {
       addComment(response.rows[i].value);
     }
     $('#photoview').show();
@@ -190,10 +190,10 @@ function onImageClick() {
   var onFetchFailure = function(xhr, type) {
     console.log(type + ' ' + xhr.responseText);
   }
-
+  console.log(selectedPictureId);
   $.ajax({
    type: 'GET',
-   url: '/photoshare/_design/photoshare/_view/photo_and_comments?startkey=["'+selectedPictureId+'",1]',
+   url: '/photoshare/_design/photoshare/_view/photo_and_comments?startkey=["'+selectedPictureId+'",1]&endkey=["'+selectedPictureId+'",1]',
    dataType: 'json',
    contentType: 'application/json',
    success: onFetchSuccess,
