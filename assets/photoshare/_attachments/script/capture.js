@@ -8,11 +8,13 @@ var selectedPictureId = null;
 function addImage(imageId) {
     var newImg = $("<img></img>")
                  .addClass('thumbnail')
-                 .css('width', '60px')
                  .css('float', 'left')
                  .css('padding', '2px')
+                 .error(function() {
+                   $(this).hide();
+                 })
                  .attr({id: imageId,
-                        src: '/photoshare/'+imageId+'/original.jpg'
+                        src: '/photoshare/'+imageId+'/thumbnail.jpg'
                        });
     newImg.click(onImageClick);
     $('#pictures').prepend(newImg);
@@ -173,7 +175,7 @@ function sendComment() {
 function onImageClick() {
   // FIXME: maybe use a hidden field instead?
   selectedPictureId = this.id;
-  $('#photoview-image').attr('src', this.src).css('width', '100%');
+  $('#photoview-image').attr('src', '/photoshare/'+this.id+'/original.jpg').css('width', '100%');
   $('#photoview').css("-webkit-transform","translate(0,0)");
 
   var onFetchSuccess = function(response) {
