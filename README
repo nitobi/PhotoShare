@@ -8,3 +8,8 @@ make sure to create references to the following classes in the LibCouch project:
 -commons-compress-1.0.jar
 -commons-io-2.0.1.jar
 
+Also required:
+
+NodeJS with the following packages:
+request
+nano
